@@ -4,7 +4,7 @@ import logging
 import os
 import requests
 import sys
-# 不再需要base64
+import base64
 from datetime import datetime
 import pytz
 
@@ -15,9 +15,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
-# --- 【最终修正版】密钥数据 ---
-# 将原始密钥分割成几部分，运行时再拼接。这是最简单且最可靠的混淆方式。
-KEY_COMPONENTS = ("BearBoss_Is_Watching", "_You_XHG")
+AUTH_PAYLOAD_REV = "==wRH1u9_dfpmh0YV2NfSXNfNzJvc3JhQmVQ"
 
 
 def setup_logging():
@@ -84,8 +82,12 @@ def get_expiry_date(driver):
 
 
 def get_master_key():
-    """【最终修正版】从组件中拼接出主密钥。"""
-    return "".join(KEY_COMPONENTS)
+    try:
+        b64_string = AUTH_PAYLOAD_REV[::-1]
+        decoded_bytes = base64.b64decode(b64_string)
+        return decoded_bytes.decode('utf-8')
+    except Exception:
+        return ""
 
 
 def main():
@@ -101,7 +103,7 @@ def main():
 
     if user_provided_key != master_key:
         error_message = "该版本已经失效！如有需要请联系：https://t.me/o_key_dokey😄"
-        logger.error(f"密钥验证失败！接收到的密钥为'{user_provided_key}'，但内部主密钥为'{master_key}'。{error_message}")
+        logger.error(f"密钥验证失败！{error_message}")
         sys.exit()
 
     logger.info("密钥验证成功，准许执行。")
@@ -149,17 +151,26 @@ def main():
             logger.info("到期时间充裕 (>=5天)，本次操作为健康检查或重复执行。")
         logger.info("点击'续费产品'按钮...")
         wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), '续费产品')]"))).click()
-        logger.info("点击最终的'续期'提交按钮...")
+
+        # --- 【鲁棒性最终升级】使用JavaScript点击 ---
+        logger.info("尝试定位并使用JavaScript点击'续期'提交按钮...")
         submit_button_xpath = "//input[contains(@class, 'install-complete')]"
-        wait.until(EC.element_to_be_clickable((By.XPATH, submit_button_xpath))).click()
-        logger.info("提交操作已执行！等待页面刷新数据...")
+        # 1. 我们不再等待它'可被点击'，只等待它'出现'在页面代码里
+        submit_button = wait.until(EC.presence_of_element_located((By.XPATH, submit_button_xpath)))
+
+        # 2. 使用JavaScript来执行点击，这可以绕过大部分遮挡或状态问题
+        driver.execute_script("arguments[0].click();", submit_button)
+
+        logger.info("提交操作已通过JavaScript执行！等待页面刷新数据...")
         time.sleep(5)
         driver.refresh()
+
         logger.info("重新获取到期时间以进行验证...")
         after_date_str = get_expiry_date(driver)
         if not after_date_str:
             raise Exception("无法获取续期后的到期时间，请手动检查。")
         logger.info(f"操作后，到期时间为: {after_date_str}")
+
         logger.info("=" * 10 + " 任务结果报告 " + "=" * 10)
         final_report = ""
         if before_date_str != after_date_str:
@@ -178,6 +189,7 @@ def main():
                 final_report = (f"⚠️ *续费失败* ⚠️\n\n"
                                 f"产品ID: `{config['product_id']}`\n"
                                 f"尝试续期，但到期时间未能更新，仍为 `{before_date_str}`")
+
         end_time = time.monotonic()
         end_time_str = datetime.now(beijing_tz).strftime('%Y-%m-%d %H:%M:%S')
         duration = round(end_time - start_time)
