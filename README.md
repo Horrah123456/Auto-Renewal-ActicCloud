@@ -23,7 +23,7 @@
     pip install -r requirements.txt
     ```
 3.  **创建配置文件**: 将 `config.json.example` 文件重命名为 `config.json`。
-4.  **填写配置**: 打开 `config.json` 文件，填入你自己的个人信息（网站用户名/密码、产品ID、Telegram Bot Token、Chat ID 以及脚本密钥）。
+4.  **填写配置**: 打开 `config.json` 文件，填入你自己的个人信息。
 5.  **运行脚本**:
     ```bash
     python main.py
@@ -37,14 +37,14 @@
     - 进入你的私有仓库页面，点击 **Settings** -> **Secrets and variables** -> **Actions**。
     - 点击 **"New repository secret"** 按钮，逐一添加以下 **6** 个Secrets。请确保名称完全匹配。
 
-| Secret 名称 (Name) | 值 (Value) - 示例 | 说明 (Description) |
-| :--- | :--- | :--- |
-| `USERNAME` | `your_email@example.com` | 您登录网站所用的用户名或邮箱。 |
-| `PASSWORD` | `your_super_secret_password` | 您登录网站所用的密码。 |
-| `PRODUCT_ID` | `974` | 您要续期的产品ID，在产品详情页URL中可以找到。 |
-| `BOT_TOKEN` | `123456:ABC-DEF1234567890` | 您从`@BotFather`获取的Telegram机器人Token。 |
-| `CHAT_ID` | `123456789` | 您从`@userinfobot`获取的、用于接收通知的Chat ID。 |
-| `SCRIPT_SECRET_KEY`| `BearBoss_Is_Watching_You_XHG`| 用于激活脚本的密钥。**值必须与 `main.py` 中预设的完全一致**。|
+    ```
+    USERNAME         : 官网用户名
+    PASSWORD         : 官网密码
+    PRODUCT_ID       : 机器ID
+    BOT_TOKEN        : TG_BOT API
+    CHAT_ID          : TG_User ID
+    SCRIPT_SECRET_KEY: Guess
+    ```
 
 4.  **运行工作流**:
     - 配置好所有Secrets后，进入仓库的 **Actions** 标签页。
