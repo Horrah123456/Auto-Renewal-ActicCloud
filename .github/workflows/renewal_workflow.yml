@@ -34,6 +34,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # 【新增的调试步骤】在运行主脚本前，检查所有Secrets是否可用
+      - name: Debug Secrets Availability
+        run: |
+          echo "Checking for secrets availability..."
+          if [ -n "${{ secrets.USERNAME }}" ]; then echo "USERNAME: Found"; else echo "USERNAME: !!! NOT FOUND !!!"; fi
+          if [ -n "${{ secrets.PASSWORD }}" ]; then echo "PASSWORD: Found"; else echo "PASSWORD: !!! NOT FOUND !!!"; fi
+          if [ -n "${{ secrets.PRODUCT_ID }}" ]; then echo "PRODUCT_ID: Found"; else echo "PRODUCT_ID: !!! NOT FOUND !!!"; fi
+          if [ -n "${{ secrets.BOT_TOKEN }}" ]; then echo "BOT_TOKEN: Found"; else echo "BOT_TOKEN: !!! NOT FOUND !!!"; fi
+          if [ -n "${{ secrets.CHAT_ID }}" ]; then echo "CHAT_ID: Found"; else echo "CHAT_ID: !!! NOT FOUND !!!"; fi
+          if [ -n "${{ secrets.SCRIPT_SECRET_KEY }}" ]; then echo "SCRIPT_SECRET_KEY: Found"; else echo "SCRIPT_SECRET_KEY: !!! NOT FOUND !!!"; fi
+
       # 第四步：运行我们的主脚本
       - name: Run the renewal script
         # 将我们设置的Secrets作为环境变量注入到运行环境中
