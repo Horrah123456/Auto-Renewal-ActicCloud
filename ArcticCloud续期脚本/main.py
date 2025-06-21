@@ -103,7 +103,7 @@ def main():
     master_key = get_master_key()
 
     if user_provided_key != master_key:
-        error_message = "该版本已经失效！如有需要请联系：https://t.me/o_key_dokey😄"
+        error_message = "该版本已经失效！如有需要请联系：https://t.me/XHGchat_bot😄"
         logger.error(f"密钥验证失败！{error_message}")
         sys.exit()
 
@@ -185,7 +185,7 @@ def main():
         timing_info = f"\n\n*结束时间:* `{end_time_str}`\n*总耗时:* `{duration} 秒`"
 
         final_report += timing_info
-        final_report += "\n\n`我要告诉熊老板你开挂！--by  XHG`"
+        final_report += "\n\n`BearBoss_ s Watching You！--by XHG`"
         send_telegram_message(bot_token, chat_id, final_report)
         time.sleep(10)
 
