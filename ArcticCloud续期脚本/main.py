@@ -103,7 +103,7 @@ def main():
     master_key = get_master_key()
 
     if user_provided_key != master_key:
-        error_message = "该版本已经失效！如有需要请联系：https://t.me/o_key_dokey😄"
+        error_message = "该版本已经失效！如有需要请联系：https://t.me/XHGchat_bot😄"
         logger.error(f"密钥验证失败！{error_message}")
         sys.exit()
 
