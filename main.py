@@ -15,7 +15,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
-# 最终版混淆密钥数据
 AUTH_PAYLOAD_REV = "==wRH1u9_dfpmh0YV2NfSXNfNzJvc3JhQmVQ"
 
 
@@ -99,8 +98,50 @@ def main():
 
     # 为了避免出现骑脸行为导致加入反自动策略故采取此措施，见谅！
     user_provided_key = config.get('script_secret_key')
-
     master_key = get_master_key()
+
+    # --- 【最终法医级调试】---
+    logger.info("=" * 10 + " 密钥法医分析 " + "=" * 10)
+    if user_provided_key:
+        logger.info(f"接收到的密钥长度为: {len(user_provided_key)}")
+        logger.info(f"脚本内部主密钥的长度是: {len(master_key)}")
+        logger.info(f"两密钥是否完全相等? {user_provided_key == master_key}")
+    else:
+        logger.error("接收到的密钥为空(None)！")
+    logger.info("=" * 10 + " 分析结束 " + "=" * 10)
+
+    if user_provided_key != master_key:
+        error_message = "该版本已经失效！如有需要请联系：https://t.me/o_key_dokey😄"
+        logger.error(f"密钥验证失败！{error_message}")
+        sys.exit()
+
+    # 后续代码保持不变...
+    logger.info("密钥验证成功，准许执行。")
+    bot_token = config.get('bot_token')
+    chat_id = config.get('chat_id')
+    # ... (为了简洁，省略后续不变的代码)
+
+
+# --- 以下为完整的、未省略的main函数，请使用这个 ---
+def main_full():
+    logger = setup_logging()
+    config = load_config()
+    if not config:
+        return
+
+    # 为了避免出现骑脸行为导致加入反自动策略故采取此措施，见谅！
+    user_provided_key = config.get('script_secret_key')
+    master_key = get_master_key()
+
+    # --- 【最终法医级调试】---
+    logger.info("=" * 10 + " 密钥法医分析 " + "=" * 10)
+    if user_provided_key:
+        logger.info(f"接收到的密钥长度为: {len(user_provided_key)}")
+        logger.info(f"脚本内部主密钥的长度是: {len(master_key)}")
+        logger.info(f"两密钥是否完全相等? {user_provided_key == master_key}")
+    else:
+        logger.error("接收到的密钥为空(None)！")
+    logger.info("=" * 10 + " 分析结束 " + "=" * 10)
 
     if user_provided_key != master_key:
         error_message = "该版本已经失效！如有需要请联系：https://t.me/o_key_dokey😄"
@@ -122,18 +163,13 @@ def main():
     driver = None
     try:
         logger.info("初始化并登录...")
-
-        # --- 【云端适配】为服务器环境配置Chrome选项 ---
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--window-size=1920,1080")
-
         service = ChromeService(executable_path=ChromeDriverManager().install())
-        # 将配置好的选项传递给WebDriver
         driver = webdriver.Chrome(service=service, options=chrome_options)
-
         driver.maximize_window()
         driver.get("https://vps.polarbear.nyc.mn/index/login/")
         wait = WebDriverWait(driver, 10)
@@ -186,7 +222,6 @@ def main():
                 final_report = (f"⚠️ *续费失败* ⚠️\n\n"
                                 f"产品ID: `{config['product_id']}`\n"
                                 f"尝试续期，但到期时间未能更新，仍为 `{before_date_str}`")
-
         end_time = time.monotonic()
         end_time_str = datetime.now(beijing_tz).strftime('%Y-%m-%d %H:%M:%S')
         duration = round(end_time - start_time)
@@ -218,4 +253,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # 为了简洁，上面的main是示意，实际请使用这个main_full
+    main_full()
