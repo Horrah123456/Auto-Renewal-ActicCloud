@@ -1,0 +1,16 @@
+# 配置文件，包含敏感信息，绝不上传
+config.json
+
+# 日志文件，只在本地生成
+log/
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# IDE 配置文件
+.idea/
+
+# Python 虚拟环境文件夹
+venv/
+*/venv/
