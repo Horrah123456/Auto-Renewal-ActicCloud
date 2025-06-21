@@ -11,6 +11,7 @@
 - 通过对比日期验证续期结果
 - 将详细的执行日志保存到本地 `log/` 文件夹
 - 通过 Telegram Bot 发送实时成功或失败通知
+- 内置密钥验证机制，防止脚本被随意滥用
 
 ## 🚀 如何使用
 
@@ -22,7 +23,7 @@
     pip install -r requirements.txt
     ```
 3.  **创建配置文件**: 将 `config.json.example` 文件重命名为 `config.json`。
-4.  **填写配置**: 打开 `config.json` 文件，填入你自己的个人信息（网站用户名/密码、产品ID、Telegram Bot Token 和 Chat ID）。
+4.  **填写配置**: 打开 `config.json` 文件，填入你自己的个人信息（网站用户名/密码、产品ID、Telegram Bot Token、Chat ID 以及脚本密钥）。
 5.  **运行脚本**:
     ```bash
     python main.py
@@ -30,15 +31,26 @@
 
 ### 2. 使用 GitHub Actions 部署 (推荐)
 
-1.  **Fork 本项目** 到你自己的 GitHub 账户，并确保你的仓库是 **私有的 (Private)**。
-2.  在你的私有仓库中，进入 **Settings -> Secrets and variables -> Actions**。
-3.  点击 **"New repository secret"**，并添加以下5个Secrets，值来自于你的 `config.json`：
-    - `USERNAME`
-    - `PASSWORD`
-    - `PRODUCT_ID`
-    - `BOT_TOKEN`
-    - `CHAT_ID`
-4.  本项目中的 `.github/workflows/renewal_workflow.yml` 文件已配置好。它会根据你设定的 `schedule` (默认为每4天) 自动运行。你也可以在仓库的 **Actions** 标签页手动触发。
+1.  **Fork 本项目** 到你自己的 GitHub 账户。
+2.  **将你的仓库设置为私有 (Private)**：进入你 Fork 后的仓库页面，点击 **Settings**，在 **General** 页面的最下方找到 "Danger Zone"，选择 "Change repository visibility" 将其设为私有。这是为了保护您的Secrets安全。
+3.  **配置仓库 Secrets (关键步骤)**：
+    - 进入你的私有仓库页面，点击 **Settings** -> **Secrets and variables** -> **Actions**。
+    - 点击 **"New repository secret"** 按钮，逐一添加以下 **6** 个Secrets。请确保名称完全匹配。
+
+| Secret 名称 (Name) | 值 (Value) - 示例 | 说明 (Description) |
+| :--- | :--- | :--- |
+| `USERNAME` | `your_email@example.com` | 您登录网站所用的用户名或邮箱。 |
+| `PASSWORD` | `your_super_secret_password` | 您登录网站所用的密码。 |
+| `PRODUCT_ID` | `974` | 您要续期的产品ID，在产品详情页URL中可以找到。 |
+| `BOT_TOKEN` | `123456:ABC-DEF1234567890` | 您从`@BotFather`获取的Telegram机器人Token。 |
+| `CHAT_ID` | `123456789` | 您从`@userinfobot`获取的、用于接收通知的Chat ID。 |
+| `SCRIPT_SECRET_KEY`| `BearBoss_Is_Watching_You_XHG`| 用于激活脚本的密钥。**值必须与 `main.py` 中预设的完全一致**。|
+
+4.  **运行工作流**:
+    - 配置好所有Secrets后，进入仓库的 **Actions** 标签页。
+    - 在左侧选择 **"Auto Renewal Bot"** 工作流。
+    - 点击 **"Run workflow"** 按钮来手动触发一次，以测试所有配置是否正确。
+    - 之后，工作流将根据 `.github/workflows/renewal_workflow.yml` 文件中 `schedule` 的设置（默认为每4天）自动运行。
 
 ## ⚠️ 注意
 
