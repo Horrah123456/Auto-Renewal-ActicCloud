@@ -15,8 +15,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
-# 【最终版】我们使用这个简单可靠的混淆密钥
-ENCODED_MASTER_KEY = "QmVhckJvc3NfSXNfV2F0Y2hpbmdfWW91X1hIRw=="
+# 最终版混淆密钥数据
+AUTH_PAYLOAD_REV = "==wRH1u9_dfpmh0YV2NfSXNfNzJvc3JhQmVQ"
 
 
 def setup_logging():
@@ -48,13 +48,13 @@ def load_config():
         config['script_secret_key'] = os.environ.get('SCRIPT_SECRET_KEY')
         logging.info("从环境变量中加载配置成功。")
     except KeyError:
-        logging.info("未找到核心环境变量，尝试从 config.json.example 加载配置。")
+        logging.info("未找到核心环境变量，尝试从 config.json 加载配置。")
         try:
-            with open('config.json.example', 'r') as f:
+            with open('config.json', 'r') as f:
                 config = json.load(f)
-                logging.info("从 config.json.example 加载配置成功。")
+                logging.info("从 config.json 加载配置成功。")
         except FileNotFoundError:
-            logging.error("未找到环境变量，也未找到 config.json.example 文件！")
+            logging.error("未找到环境变量，也未找到 config.json 文件！")
             return None
     return config
 
@@ -84,7 +84,7 @@ def get_expiry_date(driver):
 
 def get_master_key():
     try:
-        b64_string = ENCODED_MASTER_KEY
+        b64_string = AUTH_PAYLOAD_REV[::-1]
         decoded_bytes = base64.b64decode(b64_string)
         return decoded_bytes.decode('utf-8')
     except Exception:
@@ -103,7 +103,7 @@ def main():
     master_key = get_master_key()
 
     if user_provided_key != master_key:
-        error_message = "该版本已经失效！如有需要请联系：https://t.me/XHGchat_bot😄"
+        error_message = "该版本已经失效！如有需要请联系：https://t.me/o_key_dokey😄"
         logger.error(f"密钥验证失败！{error_message}")
         sys.exit()
 
@@ -113,7 +113,6 @@ def main():
     chat_id = config.get('chat_id')
     beijing_tz = pytz.timezone('Asia/Shanghai')
 
-    # 【修改】记录开始时间并发送启动通知
     start_time = time.monotonic()
     start_time_str = datetime.now(beijing_tz).strftime('%Y-%m-%d %H:%M:%S')
     start_message = f"🚀 *ArcticCloud续期任务开始执行* 🚀\n\n*开始时间:* `{start_time_str}`"
@@ -123,8 +122,18 @@ def main():
     driver = None
     try:
         logger.info("初始化并登录...")
+
+        # --- 【云端适配】为服务器环境配置Chrome选项 ---
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--window-size=1920,1080")
+
         service = ChromeService(executable_path=ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service)
+        # 将配置好的选项传递给WebDriver
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+
         driver.maximize_window()
         driver.get("https://vps.polarbear.nyc.mn/index/login/")
         wait = WebDriverWait(driver, 10)
@@ -178,25 +187,21 @@ def main():
                                 f"产品ID: `{config['product_id']}`\n"
                                 f"尝试续期，但到期时间未能更新，仍为 `{before_date_str}`")
 
-        # 【修改】加入任务耗时信息
         end_time = time.monotonic()
         end_time_str = datetime.now(beijing_tz).strftime('%Y-%m-%d %H:%M:%S')
         duration = round(end_time - start_time)
         timing_info = f"\n\n*结束时间:* `{end_time_str}`\n*总耗时:* `{duration} 秒`"
-
         final_report += timing_info
-        final_report += "\n\n`BearBoss_ s Watching You！--by XHG`"
+        final_report += "\n\n`我要告诉熊老板你开挂！--by  XHG`"
         send_telegram_message(bot_token, chat_id, final_report)
         time.sleep(10)
 
     except Exception as e:
         logger.error(f"在执行过程中发生了严重错误。", exc_info=True)
-        # 【修改】错误报告也加入时间信息
         end_time = time.monotonic()
         end_time_str = datetime.now(beijing_tz).strftime('%Y-%m-%d %H:%M:%S')
         duration = round(end_time - start_time)
         timing_info = f"\n\n*发生时间:* `{end_time_str}`\n*已运行:* `{duration} 秒`"
-
         error_report = (f"❌ *任务执行失败* ❌\n\n"
                         f"产品ID: `{config['product_id']}`\n"
                         f"错误信息: `{e}`\n\n"
