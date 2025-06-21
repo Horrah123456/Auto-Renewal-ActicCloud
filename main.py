@@ -4,7 +4,7 @@ import logging
 import os
 import requests
 import sys
-import base64
+# 不再需要base64
 from datetime import datetime
 import pytz
 
@@ -15,7 +15,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
-AUTH_PAYLOAD_REV = "==wRH1u9_dfpmh0YV2NfSXNfNzJvc3JhQmVQ"
+# --- 【最终修正版】密钥数据 ---
+# 将原始密钥分割成几部分，运行时再拼接。这是最简单且最可靠的混淆方式。
+KEY_COMPONENTS = ("BearBoss_Is_Watching", "_You_XHG")
 
 
 def setup_logging():
@@ -82,12 +84,8 @@ def get_expiry_date(driver):
 
 
 def get_master_key():
-    try:
-        b64_string = AUTH_PAYLOAD_REV[::-1]
-        decoded_bytes = base64.b64decode(b64_string)
-        return decoded_bytes.decode('utf-8')
-    except Exception:
-        return ""
+    """【最终修正版】从组件中拼接出主密钥。"""
+    return "".join(KEY_COMPONENTS)
 
 
 def main():
@@ -98,54 +96,12 @@ def main():
 
     # 为了避免出现骑脸行为导致加入反自动策略故采取此措施，见谅！
     user_provided_key = config.get('script_secret_key')
-    master_key = get_master_key()
 
-    # --- 【最终法医级调试】---
-    logger.info("=" * 10 + " 密钥法医分析 " + "=" * 10)
-    if user_provided_key:
-        logger.info(f"接收到的密钥长度为: {len(user_provided_key)}")
-        logger.info(f"脚本内部主密钥的长度是: {len(master_key)}")
-        logger.info(f"两密钥是否完全相等? {user_provided_key == master_key}")
-    else:
-        logger.error("接收到的密钥为空(None)！")
-    logger.info("=" * 10 + " 分析结束 " + "=" * 10)
+    master_key = get_master_key()
 
     if user_provided_key != master_key:
         error_message = "该版本已经失效！如有需要请联系：https://t.me/o_key_dokey😄"
-        logger.error(f"密钥验证失败！{error_message}")
-        sys.exit()
-
-    # 后续代码保持不变...
-    logger.info("密钥验证成功，准许执行。")
-    bot_token = config.get('bot_token')
-    chat_id = config.get('chat_id')
-    # ... (为了简洁，省略后续不变的代码)
-
-
-# --- 以下为完整的、未省略的main函数，请使用这个 ---
-def main_full():
-    logger = setup_logging()
-    config = load_config()
-    if not config:
-        return
-
-    # 为了避免出现骑脸行为导致加入反自动策略故采取此措施，见谅！
-    user_provided_key = config.get('script_secret_key')
-    master_key = get_master_key()
-
-    # --- 【最终法医级调试】---
-    logger.info("=" * 10 + " 密钥法医分析 " + "=" * 10)
-    if user_provided_key:
-        logger.info(f"接收到的密钥长度为: {len(user_provided_key)}")
-        logger.info(f"脚本内部主密钥的长度是: {len(master_key)}")
-        logger.info(f"两密钥是否完全相等? {user_provided_key == master_key}")
-    else:
-        logger.error("接收到的密钥为空(None)！")
-    logger.info("=" * 10 + " 分析结束 " + "=" * 10)
-
-    if user_provided_key != master_key:
-        error_message = "该版本已经失效！如有需要请联系：https://t.me/o_key_dokey😄"
-        logger.error(f"密钥验证失败！{error_message}")
+        logger.error(f"密钥验证失败！接收到的密钥为'{user_provided_key}'，但内部主密钥为'{master_key}'。{error_message}")
         sys.exit()
 
     logger.info("密钥验证成功，准许执行。")
@@ -253,5 +209,4 @@ def main_full():
 
 
 if __name__ == "__main__":
-    # 为了简洁，上面的main是示意，实际请使用这个main_full
-    main_full()
+    main()
