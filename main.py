@@ -6,6 +6,7 @@ import requests
 import sys
 from datetime import datetime
 import pytz
+import re  # 导入正则表达式库用于文本清理
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
@@ -47,6 +48,12 @@ def load_configs(logger):
         return None, None
 
 
+def escape_markdown(text):
+    """转义Telegram MarkdownV2的特殊字符"""
+    escape_chars = r'_*[]()~`>#+-=|{}.!'
+    return re.sub(f'([{re.escape(escape_chars)}])', r'\\\1', text)
+
+
 def send_telegram_message(tg_config, text):
     if not tg_config or not tg_config.get('bot_token') or not tg_config.get('chat_id'):
         logging.error("Telegram配置不完整，无法发送通知。")
@@ -54,8 +61,9 @@ def send_telegram_message(tg_config, text):
     api_url = f"https://api.telegram.org/bot{tg_config['bot_token']}/sendMessage"
     payload = {'chat_id': tg_config['chat_id'], 'text': text, 'parse_mode': 'MarkdownV2'}
     try:
-        requests.post(api_url, data=payload, timeout=10)
-        logging.info("Telegram 通知已发送。")
+        response = requests.post(api_url, data=payload, timeout=10)
+        if response.status_code != 200:
+            logging.error(f"发送Telegram通知失败，状态码: {response.status_code}, 响应: {response.text}")
     except Exception as e:
         logging.error(f"发送 Telegram 通知失败: {e}")
 
@@ -92,6 +100,7 @@ def renew_single_product(driver, product_id, logger):
         else:
             logger.warning(f"产品 {product_id}: 未发现'续期'按钮，跳过点击。")
 
+        # 【修复】修正了这里的函数调用，移除了多余的wait参数
         after_date_str = get_expiry_date(driver, wait)
         if not after_date_str:
             return f"❌ *产品ID `{product_id}` 处理失败* (无法获取操作后日期)"
@@ -103,7 +112,8 @@ def renew_single_product(driver, product_id, logger):
 
     except Exception as e:
         logger.error(f"处理产品ID {product_id} 时发生错误。", exc_info=True)
-        return f"❌ *产品ID `{product_id}` 处理失败* (错误: {type(e).__name__})"
+        error_text = escape_markdown(str(e).splitlines()[0])  # 清理错误信息
+        return f"❌ *产品ID `{product_id}` 处理失败* (错误: `{error_text}`)"
 
 
 def get_expiry_date(driver, wait):
@@ -130,11 +140,10 @@ def main():
     start_time = time.monotonic()
     beijing_tz = pytz.timezone('Asia/Shanghai')
     start_time_str = datetime.now(beijing_tz).strftime('%Y-%m-%d %H:%M:%S')
-    send_telegram_message(tg_config, f"🚀 *多产品续期任务启动*\n\n*开始时间:* `{start_time_str}`")
+    send_telegram_message(tg_config, f"🚀 *ArcticCloud续期任务启动*\n\n*开始时间:* `{start_time_str}`")
 
     driver = None
     results = []
-    # 【修复】在try块之前初始化final_report，确保其始终存在
     final_report = ""
     try:
         logger.info("初始化浏览器并登录账户...")
@@ -163,7 +172,8 @@ def main():
 
     except Exception as e:
         logger.error("在主流程中发生严重错误。", exc_info=True)
-        final_report = f"❌ *主流程执行失败*\n\n错误: `{e}`"
+        error_text = escape_markdown(str(e).splitlines()[0])  # 清理错误信息
+        final_report = f"❌ *主流程执行失败*\n\n错误: `{error_text}`"
 
     finally:
         if driver: driver.quit()
@@ -173,9 +183,8 @@ def main():
         timing_info = f"\n\n*结束时间:* `{end_time_str}`\n*总耗时:* `{duration} 秒`"
         schedule_info = "\n*任务计划:* `每4天自动运行一次`"
 
-        # 【修复】确保final_report存在，然后再追加信息
         if not final_report:
-            final_report = " M"  # 如果final_report意外为空，给一个默认值
+            final_report = "🤔 *任务意外结束，未生成报告*"
 
         final_report += timing_info + schedule_info
         final_report += "\n\n`我要告诉熊老板你开挂！--by  XHG`"
