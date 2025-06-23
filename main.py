@@ -72,11 +72,10 @@ def renew_single_product(driver, product_id, logger):
         logger.info(f"--- 开始处理产品ID: {product_id} ---")
         driver.get(product_url)
 
-        list_item_xpath = "//li[contains(text(), '到期时间')]"
-        list_item = wait.until(EC.presence_of_element_located((By.XPATH, list_item_xpath)))
-        full_text = list_item.text
-        parts = full_text.split(' ')
-        before_date_str = parts[parts.index('到期时间') + 1]
+        before_date_str = get_expiry_date(driver, wait)
+        if not before_date_str:
+            return f"❌ *产品ID `{product_id}` 处理失败* (无法获取操作前日期)"
+
         logger.info(f"产品 {product_id} 操作前到期时间: {before_date_str}")
 
         wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), '续费产品')]"))).click()
@@ -94,6 +93,9 @@ def renew_single_product(driver, product_id, logger):
             logger.warning(f"产品 {product_id}: 未发现'续期'按钮，跳过点击。")
 
         after_date_str = get_expiry_date(driver, wait)
+        if not after_date_str:
+            return f"❌ *产品ID `{product_id}` 处理失败* (无法获取操作后日期)"
+
         if before_date_str != after_date_str:
             return f"✅ *产品ID `{product_id}` 续费成功* (从 `{before_date_str}` 到 `{after_date_str}`)"
         else:
@@ -101,7 +103,7 @@ def renew_single_product(driver, product_id, logger):
 
     except Exception as e:
         logger.error(f"处理产品ID {product_id} 时发生错误。", exc_info=True)
-        return f"❌ *产品ID `{product_id}` 处理失败* (详情见日志)"
+        return f"❌ *产品ID `{product_id}` 处理失败* (错误: {type(e).__name__})"
 
 
 def get_expiry_date(driver, wait):
@@ -118,8 +120,7 @@ def get_expiry_date(driver, wait):
 def main():
     logger = setup_logging()
     account_config, tg_config = load_configs(logger)
-    if not account_config:
-        sys.exit(1)
+    if not account_config: sys.exit(1)
 
     if account_config.get('script_secret_key') != get_master_key():
         logger.error("密钥验证失败！程序退出。");
@@ -133,6 +134,8 @@ def main():
 
     driver = None
     results = []
+    # 【修复】在try块之前初始化final_report，确保其始终存在
+    final_report = ""
     try:
         logger.info("初始化浏览器并登录账户...")
         chrome_options = webdriver.ChromeOptions()
@@ -169,6 +172,11 @@ def main():
         duration = round(end_time - start_time)
         timing_info = f"\n\n*结束时间:* `{end_time_str}`\n*总耗时:* `{duration} 秒`"
         schedule_info = "\n*任务计划:* `每4天自动运行一次`"
+
+        # 【修复】确保final_report存在，然后再追加信息
+        if not final_report:
+            final_report = " M"  # 如果final_report意外为空，给一个默认值
+
         final_report += timing_info + schedule_info
         final_report += "\n\n`我要告诉熊老板你开挂！--by  XHG`"
         send_telegram_message(tg_config, final_report)
