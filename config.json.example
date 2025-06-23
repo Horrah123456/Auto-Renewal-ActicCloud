@@ -1,8 +1,10 @@
 {
   "username": "YOUR_USERNAME_HERE",
   "password": "YOUR_PASSWORD_HERE",
-  "product_id": "YOUR_PRODUCT_ID_HERE",
-  "bot_token": "YOUR_BOT_TOKEN_HERE",
-  "chat_id": "YOUR_CHAT_ID_HERE",
-  "script_secret_key": "BearBoss is Watching You"
+  "product_ids": [
+    "974",
+    "975",
+    "1001"
+  ],
+  "script_secret_key": "BearBoss_Is_Watching_You_XHG"
 }

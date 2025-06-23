@@ -1,58 +1,96 @@
-# 自动续期机器人 (Auto Renewal Bot)
+# ArcticCloud 自动续期机器人
 
-这是一个使用 Python 和 Selenium 实现的自动化脚本，旨在自动登录指定网站，为产品进行续期，并通过 Telegram Bot 发送任务执行结果通知。
+这是一个使用 Python 和 Selenium 实现的自动化脚本，旨在自动登录指定网站，为多个产品进行续期，并通过 Telegram Bot 发送任务执行结果通知。
 
 ## ✨ 功能特性
 
-- 自动登录网站
-- 直接导航到指定产品页面
-- 智能判断是否需要续期
-- 执行续期操作
-- 通过对比日期验证续期结果
-- 将详细的执行日志保存到本地 `log/` 文件夹
-- 通过 Telegram Bot 发送实时成功或失败通知
-- 内置密钥验证机制，防止脚本被随意滥用
+- **多产品支持**: 一次登录，循环处理账户下的多个产品。
+- **智能判断**: 自动分析产品到期时间，决定续期操作的报告类型。
+- **状态验证**: 通过对比操作前后的到期日期，确保续期结果真实有效。
+- **实时通知**: 通过 Telegram Bot 发送图文并茂、格式清晰的执行报告。
+- **安全设计**:
+    - 使用 GitHub Secrets 存储凭证，与代码完全分离。
+    - 内置密钥验证机制，防止项目被随意滥用。
+- **云端原生**: 基于 GitHub Actions，无需自备服务器，实现云端全自动定时执行。
 
-## 🚀 如何使用
+## ⚙️ 准备工作
 
-### 1. 本地运行
+在开始部署之前，请确保您已拥有：
+1.  一个 **GitHub 账户**。
+2.  一个 **Telegram 账户**。
+3.  目标网站（例如 ArcticCloud）的**账户**和需要续期的**产品ID**。
 
-1.  **克隆或下载本项目。**
-2.  **安装依赖**: 确保你已安装 Python 3.9+。在项目根目录下运行：
-    ```bash
-    pip install -r requirements.txt
+## 🚀 部署指南
+
+请严格按照以下步骤操作，即可拥有一个为您7x24小时工作的自动化机器人。
+
+### 第一步: 创建 Telegram Bot (`获取 Token 和 Chat ID`)
+
+我们需要创建一个机器人来为您发送通知。
+
+1.  在Telegram中，搜索并打开官方机器人 **`@BotFather`**。
+2.  发送 `/newbot` 命令，然后按照提示为您的机器人取一个名字（如 `我的续期助手`）和一个独一无二的用户名（必须以`bot`结尾，如 `MyRenewalHelper_bot`）。
+3.  `BotFather` 会回复您一长串以数字开头的 **Token**。这就是您的 `BOT_TOKEN`，请复制并妥善保管。
+4.  接下来，搜索并打开 **`@userinfobot`**。
+5.  发送 `/start`，它会立刻回复您的信息，第一行的 **`Id:`** 后面的那串数字，就是您的 `CHAT_ID`。
+6.  **重要**: 回到您刚刚创建的机器人对话框，给它发送一条 `/start` 消息，以“激活”它，否则它无法主动给您发送消息。
+
+### 第二步: Fork 项目并设为私有 (`创建你的代码仓库`)
+
+1.  点击本项目右上角的 **"Fork"** 按钮，将项目复制到您自己的GitHub账户下。
+2.  进入您刚刚 Fork 后的仓库页面，点击 **"Settings"**。
+3.  在 **"General"** 设置页面的最下方找到 "Danger Zone" 区域，点击 "Change repository visibility"。
+4.  选择 **"Make private"**，并按照提示完成操作。这将确保您的所有配置信息绝对安全。
+
+### 第三步: 配置仓库 Secrets (`为机器人注入灵魂`)
+
+这是最关键的步骤，我们将把所有敏感信息安全地存放在GitHub的“保险箱”中。
+
+1.  在您的**私有仓库**页面，点击 **"Settings"** -> **"Secrets and variables"** -> **"Actions"**。
+2.  点击绿色的 **"New repository secret"** 按钮，逐一添加以下 **2** 个Secrets。
+
+---
+**`ACCOUNT_CONFIG_JSON`**
+
+* **Name**: `ACCOUNT_CONFIG_JSON`
+* **Secret**: (将下面JSON内容根据您的信息修改后，完整粘贴进去)
+
+    ```json
+    {
+      "username": "your_email@example.com",
+      "password": "your_super_secret_password",
+      "product_ids": [
+        "974",
+        "975",
+        "1001"
+      ],
+      "script_secret_key": "BearBoss Is Watching You"
+    }
     ```
-3.  **创建配置文件**: 将 `config.json.example` 文件重命名为 `config.json`。
-4.  **填写配置**: 打开 `config.json` 文件，填入你自己的个人信息。
-5.  **运行脚本**:
-    ```bash
-    python main.py
+
+---
+**`TELEGRAM_CONFIG_JSON`**
+
+* **Name**: `TELEGRAM_CONFIG_JSON`
+* **Secret**: (将下面JSON内容根据您的信息修改后，完整粘贴进去)
+
+    ```json
+    {
+      "bot_token": "123456:ABC-DEF1234567890",
+      "chat_id": "123456789"
+    }
     ```
+**注意**: 对于 `script_secret_key`，`"BearBoss Is Watching You"` 是一个提示。其真实的、正确的值隐藏在 `main.py` 脚本顶部的 `KEY_COMPONENTS` 变量中，您需要自行将那几段文本拼接起来，得到最终的密钥。
 
-### 2. 使用 GitHub Actions 部署 (推荐)
+### 第四步: 运行与监控 (`点火与观察`)
 
-1.  **Fork 本项目** 到你自己的 GitHub 账户。
-2.  **将你的仓库设置为私有 (Private)**：进入你 Fork 后的仓库页面，点击 **Settings**，在 **General** 页面的最下方找到 "Danger Zone"，选择 "Change repository visibility" 将其设为私有。这是为了保护您的Secrets安全。
-3.  **配置仓库 Secrets (关键步骤)**：
-    - 进入你的私有仓库页面，点击 **Settings** -> **Secrets and variables** -> **Actions**。
-    - 点击 **"New repository secret"** 按钮，逐一添加以下 **6** 个Secrets。请确保名称完全匹配。
-
-    ```
-    USERNAME         : 官网用户名
-    PASSWORD         : 官网密码
-    PRODUCT_ID       : 机器ID
-    BOT_TOKEN        : TG_BOT API
-    CHAT_ID          : TG_User ID
-    SCRIPT_SECRET_KEY: Guess
-    ```
-
-4.  **运行工作流**:
-    - 配置好所有Secrets后，进入仓库的 **Actions** 标签页。
-    - 在左侧选择 **"Auto Renewal Bot"** 工作流。
-    - 点击 **"Run workflow"** 按钮来手动触发一次，以测试所有配置是否正确。
-    - 之后，工作流将根据 `.github/workflows/renewal_workflow.yml` 文件中 `schedule` 的设置（默认为每4天）自动运行。
+1.  配置好所有Secrets后，进入仓库的 **"Actions"** 标签页。
+2.  在左侧选择 **"Auto Renewal Bot"** 工作流。
+3.  点击 **"Run workflow"** 按钮来手动触发一次，以测试所有配置是否正确。
+4.  您可以点击正在运行的任务，实时查看日志。片刻之后，您的Telegram就会收到来自机器人的通知。
+5.  测试成功后，无需再做任何事。工作流将根据 `.github/workflows/renewal_workflow.yml` 文件中 `schedule` 的设置（默认为每4天）自动运行。
 
 ## ⚠️ 注意
 
 - 本脚本按原样提供，请自行承担使用风险。
-- 切勿将你的 `config.json` 文件或任何包含敏感信息的文件上传到公共仓库。
+- 切勿将您的真实配置信息以任何形式上传到公共仓库。
