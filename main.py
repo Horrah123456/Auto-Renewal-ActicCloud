@@ -4,9 +4,9 @@ import logging
 import os
 import requests
 import sys
+import re
 from datetime import datetime
 import pytz
-import re  # 导入正则表达式库用于文本清理
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
@@ -48,7 +48,7 @@ def load_configs(logger):
         return None, None
 
 
-def escape_markdown(text):
+def escape_markdown_v2(text):
     """转义Telegram MarkdownV2的特殊字符"""
     escape_chars = r'_*[]()~`>#+-=|{}.!'
     return re.sub(f'([{re.escape(escape_chars)}])', r'\\\1', text)
@@ -82,7 +82,7 @@ def renew_single_product(driver, product_id, logger):
 
         before_date_str = get_expiry_date(driver, wait)
         if not before_date_str:
-            return f"❌ *产品ID `{product_id}` 处理失败* (无法获取操作前日期)"
+            return f"❌ *产品ID `{product_id}` 处理失败* \\(无法获取操作前日期\\)"
 
         logger.info(f"产品 {product_id} 操作前到期时间: {before_date_str}")
 
@@ -100,20 +100,20 @@ def renew_single_product(driver, product_id, logger):
         else:
             logger.warning(f"产品 {product_id}: 未发现'续期'按钮，跳过点击。")
 
-        # 【修复】修正了这里的函数调用，移除了多余的wait参数
         after_date_str = get_expiry_date(driver, wait)
         if not after_date_str:
-            return f"❌ *产品ID `{product_id}` 处理失败* (无法获取操作后日期)"
+            return f"❌ *产品ID `{product_id}` 处理失败* \\(无法获取操作后日期\\)"
 
+        # 【修复】对所有包含特殊字符的返回字符串进行转义
         if before_date_str != after_date_str:
-            return f"✅ *产品ID `{product_id}` 续费成功* (从 `{before_date_str}` 到 `{after_date_str}`)"
+            return f"✅ *产品ID `{product_id}` 续费成功* \\(从 `{before_date_str}` 到 `{after_date_str}`\\)"
         else:
-            return f"ℹ️ *产品ID `{product_id}` 状态未变* (到期日: `{before_date_str}`)"
+            return f"ℹ️ *产品ID `{product_id}` 状态未变* \\(到期日: `{before_date_str}`\\)"
 
     except Exception as e:
         logger.error(f"处理产品ID {product_id} 时发生错误。", exc_info=True)
-        error_text = escape_markdown(str(e).splitlines()[0])  # 清理错误信息
-        return f"❌ *产品ID `{product_id}` 处理失败* (错误: `{error_text}`)"
+        error_text = escape_markdown_v2(str(e).splitlines()[0])
+        return f"❌ *产品ID `{product_id}` 处理失败* \\(错误: `{error_text}`\\)"
 
 
 def get_expiry_date(driver, wait):
@@ -172,7 +172,7 @@ def main():
 
     except Exception as e:
         logger.error("在主流程中发生严重错误。", exc_info=True)
-        error_text = escape_markdown(str(e).splitlines()[0])  # 清理错误信息
+        error_text = escape_markdown_v2(str(e).splitlines()[0])
         final_report = f"❌ *主流程执行失败*\n\n错误: `{error_text}`"
 
     finally:
