@@ -35,12 +35,10 @@
 5.  发送 `/start`，它会立刻回复您的信息，第一行的 **`Id:`** 后面的那串数字，就是您的 `CHAT_ID`。
 6.  **重要**: 回到您刚刚创建的机器人对话框，给它发送一条 `/start` 消息，以“激活”它，否则它无法主动给您发送消息。
 
-### 第二步: Fork 项目并设为私有 (`创建你的代码仓库`)
+### 第二步: Fork 项目(`创建你的代码仓库`)
 
 1.  点击本项目右上角的 **"Fork"** 按钮，将项目复制到您自己的GitHub账户下。
-2.  进入您刚刚 Fork 后的仓库页面，点击 **"Settings"**。
-3.  在 **"General"** 设置页面的最下方找到 "Danger Zone" 区域，点击 "Change repository visibility"。
-4.  选择 **"Make private"**，并按照提示完成操作。这将确保您的所有配置信息绝对安全。
+
 
 ### 第三步: 配置仓库 Secrets (`为机器人注入灵魂`)
 
@@ -60,7 +58,7 @@
       "username": "your_email@example.com",
       "password": "your_super_secret_password",
       "product_ids": [
-        "974",
+        "999",
         "975",
         "1001"
       ],
@@ -80,7 +78,7 @@
       "chat_id": "123456789"
     }
     ```
-**注意**: 对于 `script_secret_key`，`"BearBoss Is Watching You"` 是一个提示。其真实的、正确的值隐藏在 `main.py` 脚本顶部的 `KEY_COMPONENTS` 变量中，您需要自行将那几段文本拼接起来，得到最终的密钥。
+
 
 ### 第四步: 运行与监控 (`点火与观察`)
 
